@@ -1,4 +1,5 @@
 require 'lrucache'
+require 'ostruct'
 
 class WorldLocation
   extend Forwardable
@@ -11,16 +12,41 @@ class WorldLocation
     @cache = nil
   end
 
-  def self.all
+  def self.all(use_open_register=false)
     cache_fetch("all") do
-      world_locations = Services.worldwide_api.world_locations.with_subsequent_pages.map do |l|
-        new(l) if l.format == "World location" && l.details && l.details.slug.present?
+      world_locations = 
+        if use_open_register
+          
+          some_data = YAML.load_file(Rails.root.join('lib', 'data', 'country_register_records.yml'))
+
+          transformed = some_data.map{ |l|
+              vals = l[1]
+              next if vals.has_key? 'end-date'
+
+              temp = {
+                :title => vals['name'],
+                :details => {
+                  :slug => vals['name'].downcase.gsub(' ', '-'),
+                  :iso2 => vals['country']
+                }
+              }
+              puts temp.inspect
+              new(build_ostruct_recursively(temp))
+            }
+
+          
+          transformed
+        else
+          Services.worldwide_api.world_locations.with_subsequent_pages.map do |l|
+            new(l) if l.format == "World location" && l.details && l.details.slug.present?
+        end
       end
-      world_locations.compact
+
+      world_locations.compact.sort_by{ |l| l.name }
     end
   end
 
-  def self.find(location_slug)
+  def self.find(location_slug, use_open_register=false)
     cache_fetch("find_#{location_slug}") do
       data = Services.worldwide_api.world_location(location_slug)
       self.new(data) if data
@@ -51,6 +77,17 @@ class WorldLocation
 
   def initialize(data)
     @data = data
+  end
+
+  def self.build_ostruct_recursively(value)
+    case value
+    when Hash
+      OpenStruct.new(Hash[value.map { |k, v| [k, build_ostruct_recursively(v)] }])
+    when Array
+      value.map { |v| build_ostruct_recursively(v) }
+    else
+      value
+    end
   end
 
   def ==(other)

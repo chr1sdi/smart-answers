@@ -24,7 +24,7 @@ module SmartAnswer
         end
       end
 
-      country_select :which_country?, exclude_countries: exclude_countries do
+      country_select :which_country?, :exclude_countries => exclude_countries, :use_open_register => true do
         save_input_as :country
 
         calculate :overseas_passports_embassies do

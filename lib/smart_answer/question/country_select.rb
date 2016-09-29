@@ -4,6 +4,7 @@ module SmartAnswer
       def initialize(flow, name, options = {}, &block)
         @exclude_countries = options.delete(:exclude_countries)
         @include_uk = options.delete(:include_uk)
+        @use_open_register = options.delete(:use_open_register)
         @additional_countries = options.delete(:additional_countries)
         super(flow, name, &block)
       end
@@ -32,7 +33,7 @@ module SmartAnswer
     private
 
       def load_countries
-        countries = WorldLocation.all
+        countries = WorldLocation.all @use_open_register
         unless @include_uk
           countries = countries.reject { |c| c.slug == 'united-kingdom' }
         end
