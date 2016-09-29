@@ -5,6 +5,10 @@ module SmartAnswer
       name 'register-a-death'
       status :published
       satisfies_need "101006"
+      external_related_links [
+        { title: "Book appointment", url: "https://www.booking-an-appointment.gov.uk" },
+        { title: "Buy stamps", url: "https://www.stamps.uk" },
+      ]
 
       # Q1
       multiple_choice :where_did_the_death_happen? do
