@@ -28,7 +28,7 @@ module SmartAnswer
         save_input_as :country
 
         calculate :overseas_passports_embassies do
-          location = WorldLocation.find(country)
+          location = WorldLocation.find(country, use_open_register: true)
           raise InvalidResponse unless location
           if location.fco_organisation
             location.fco_organisation.offices_with_service 'Lost or Stolen Passports'

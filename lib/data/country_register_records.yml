@@ -616,11 +616,11 @@ CZ:
   entry-number: "52"
   entry-timestamp: "2016-04-05T13:23:05Z"
   item-hash: "sha-256:c45bd0b4785680534e07c627a5eea0d2f065f0a4184a02ba2c1e643672c3f2ed"
-  name: "Czech Republic"
+  name: "Czechia"
   country: "CZ"
   start-date: "1993-01-01"
   citizen-names: "Czech"
-  official-name: "The Czech Republic"
+  official-name: "Czechia"
 TL:
   entry-number: "57"
   entry-timestamp: "2016-04-05T13:23:05Z"

@@ -13,29 +13,14 @@ class WorldLocation
   end
 
   def self.all(use_open_register=false)
-    cache_fetch("all") do
-      world_locations = 
+
+    cache_key = "all#{'_openregister' if use_open_register}"
+    cache_fetch(cache_key) do
+      world_locations =
         if use_open_register
-          
-          some_data = YAML.load_file(Rails.root.join('lib', 'data', 'country_register_records.yml'))
-
-          transformed = some_data.map{ |l|
-              vals = l[1]
-              next if vals.has_key? 'end-date'
-
-              temp = {
-                :title => vals['name'],
-                :details => {
-                  :slug => vals['name'].downcase.gsub(' ', '-'),
-                  :iso2 => vals['country']
-                }
-              }
-              puts temp.inspect
-              new(build_ostruct_recursively(temp))
-            }
-
-          
-          transformed
+          Services.open_register_api.countries.map do |l|
+            new(l)
+          end
         else
           Services.worldwide_api.world_locations.with_subsequent_pages.map do |l|
             new(l) if l.format == "World location" && l.details && l.details.slug.present?
@@ -47,8 +32,16 @@ class WorldLocation
   end
 
   def self.find(location_slug, use_open_register=false)
-    cache_fetch("find_#{location_slug}") do
-      data = Services.worldwide_api.world_location(location_slug)
+    cache_key = "find_#{location_slug}#{'_openregister' if use_open_register}"
+    cache_fetch(cache_key) do
+      data = 
+        if use_open_register
+          test_data = Services.open_register_api.countries.compact
+          test_data.detect{ |l| l.slug == location_slug }
+        else
+          Services.worldwide_api.world_location(location_slug)
+        end
+      
       self.new(data) if data
     end
   end
@@ -79,17 +72,6 @@ class WorldLocation
     @data = data
   end
 
-  def self.build_ostruct_recursively(value)
-    case value
-    when Hash
-      OpenStruct.new(Hash[value.map { |k, v| [k, build_ostruct_recursively(v)] }])
-    when Array
-      value.map { |v| build_ostruct_recursively(v) }
-    else
-      value
-    end
-  end
-
   def ==(other)
     other.is_a?(self.class) && other.slug == self.slug
   end
@@ -99,7 +81,13 @@ class WorldLocation
   alias_method :name, :title
 
   def organisations
-    @organisations ||= WorldwideOrganisation.for_location(self.slug)
+    # @organisations = []
+    # begin
+      @organisations = WorldwideOrganisation.for_location(self.slug)
+    # rescue GdsApi::BaseError => e
+    #   inner_exception = e
+    #   raise RuntimeError.new("use_stale_value")
+    # end
   end
 
   def fco_organisation
